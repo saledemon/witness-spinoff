@@ -11,7 +11,7 @@ I did this with Godot in GDScript, I'm a beginner in game-making, juste found ou
 
 'Till now, I got the basic movement working : starting at puzzle beginnning, going forward, not crossing the line, going backward, staying in the puzzle... relatively basic stuff, but much more perplexing than I would have thought. I ended using StaticBodies and a KinematicBody2D for the line tip cursor, this way it collides with the other bodies and it restricts movement.
 
-### TODO in the feature
+### TODO in the future
 
 - Smooth out movement
 - The actual puzzle solving
