@@ -1,149 +1,115 @@
 extends KinematicBody2D
 
-onready var line: Line2D = Line2D.new()
-var line_segments = []
-var collision_shapes = []
-var visual = Line2D.new()
+# Honorable Mention
+# This guy : https://gist.github.com/pwab/fd8bb562604f1d2b967efb6d5e80487d
+# This guy for circle radius(Xydium) : https://www.reddit.com/r/godot/comments/5juo09/testing_if_a_point_is_inside_a_shape/
+# Static bodies for line segment : https://godotengine.org/qa/67407/adding-collision-detection-to-line2d-collisionpolygon2d
+
+var line_body := StaticBody2D.new() 
+var line := Line2D.new()
 onready var puzzle: Polygon2D = get_parent().get_node("PuzzleContainer")
+onready var start_pos = puzzle.get_node("1").global_position
 
 func _ready():
 	position = get_global_mouse_position()
-	get_parent().call_deferred("add_child", line)
-	get_parent().call_deferred("add_child", visual)
-	visual.default_color = "#f22f"
+	line_body.add_child(line)
+	get_parent().call_deferred("add_child", line_body)
 	line.default_color = "ffffff"
-
+	
 var orientation = Vector2()
-var last_intended_orient = Vector2()
-var orthogonal = Vector2()
-var last_ortho = Vector2()
-var change_angle_count = 0
-var threshold_angle_count = 1
-var backward = false
-var solving = false
+var line_segments = []
+var seg_to_place = []
+var global_delta_move = 0
+var last_point = Vector2()
 
+export(float) var cursor_radius = 10
 export(float) var speed = 150.0
-export(float) var cursor_offset = 20
+export(float) var line_point_spacing = 3 # to make points evenly spaced
 
-func draw_visual_help(vec):
-	visual.clear_points()
-	visual.add_point(global_position)
-	visual.add_point(visual.points[0] + vec*20)
-	
-func collision_with_line(body):
-	var i = 0
-	for seg in line_segments.duplicate():
-		if seg.overlaps_body(body):
-			seg.queue_free()
-			line_segments.remove(i)
-			line.remove_point(0)
-			print("went back")
-		else:
-			break
-		i += 1
-	
-func place_segment(from, to):
-	var seg = Area2D.new()
-	seg.position = Vector2(0,0)
-	seg.name = "_"+str(line_segments.size())
-	
-	var collision = CollisionShape2D.new()
-	collision.shape = SegmentShape2D.new()
-	collision.shape.a = from
-	collision.shape.b = to
-	seg.add_child(collision)
-	seg.connect("body_entered", self, "collision_with_line")
-	get_parent().add_child(seg)
-	
-	line_segments.insert(0, seg)
-	collision_shapes.insert(0, collision)
-
-var point_to_offset = null
-var a_point = Vector2()
-
-func _physics_process(delta):
-	if not solving:
-		translate(orientation)
-	elif not orientation.is_equal_approx(Vector2.ZERO):
+func is_move_backwards():
+	if line_segments.size() > 0:
+		var slide_count = get_slide_count()
+		var collider
+		if slide_count:
+			collider = get_slide_collision(slide_count - 1).collider
 		
+		for seg in line_segments.slice(0, 5):
+			if collider == seg:
+				return true
+	return false
+
+func _physics_process(_delta):
+	if not solving:
+		position = get_global_mouse_position()
+	elif not orientation.is_equal_approx(Vector2.ZERO):
+		# is not normalized, so perfect, it is the movement distance
 		var actual_orient = move_and_slide(orientation.normalized()*speed)
-		var new_orthogonal = Vector2(actual_orient.y, -actual_orient.x)
-		#draw_visual_help(new_orthogonal)
-			
-		if backward and line.get_point_count() > 1:
-			line.remove_point(0)
-		else:
-			line.add_point(position.round(), 0)
-			
-			if not point_to_offset:
-				var distance = a_point.distance_to(position)
-				print(distance)
-				if distance > cursor_offset:
-					point_to_offset = position
-			else:
-				if a_point.distance_to(position) > cursor_offset * 2:
-					place_segment(a_point, point_to_offset)
-					a_point = point_to_offset
-					point_to_offset = null
-			
-			
+		global_delta_move += (position - last_point).length()
+		
+		if is_move_backwards():
+			move_backward()
+			global_delta_move = 0
+		elif global_delta_move > line_point_spacing:
+			var orthogonal = Vector2(-actual_orient.y, actual_orient.x).normalized()
+			var seg = create_segment(last_point, position, position + orthogonal*5, line.get_point_count())
+			seg_to_place.append(seg)
+			place_queued_segments()
+			global_delta_move -= line_point_spacing
+			last_point = position
 
 	orientation = Vector2.ZERO
+	
+func move_backward():
+	if line.get_point_count() > 1:
+		line_segments[0].queue_free()
+		line_segments.remove(0)
+		seg_to_place.clear()
+		line.remove_point(0)
+		last_point = start_pos if line_segments.size() == 0 else line_segments[0].get_child(0).polygon[1]
+	
+func create_segment(a_point, b_point, c_point, id):
+	var seg = StaticBody2D.new()
+	seg.position = Vector2(0,0)
+	seg.name = "_"+str(id)
+	
+	var collision = CollisionPolygon2D.new()
+	collision.polygon = PoolVector2Array([a_point, b_point, c_point])
+	seg.add_child(collision)
+	return seg
+
+func place_queued_segments():
+	for seg in seg_to_place.duplicate():
+		var poly = seg.get_child(0).polygon
+		if poly[1].distance_to(position) > cursor_radius:
+			line.add_point(poly[1], 0)
+			get_parent().add_child(seg)
+			line_segments.insert(0, seg)
+			seg_to_place.remove(0)
+		else:
+			break
+
+# ========== Input ============
+
+var solving = false
+
+func reset_solving():
+	last_point = Vector2()
+	solving = false
+	line.clear_points()
+	
+	# reset segments
+	for seg in line_segments + seg_to_place:
+		if seg != null:
+			seg.queue_free()
+	line_segments.clear()
+	seg_to_place.clear()
 
 func _unhandled_input(event):
 	if event is InputEventMouseMotion:
-		orientation = get_global_mouse_position() - position
-	elif not solving and event.is_action_pressed("click") and close_to("1"):
-		backward = false
+		orientation = event.relative
+	elif not solving and event.is_action_pressed("click") and position.distance_to(start_pos) < 3:
 		solving = true
-		line.add_point(puzzle.get_node("1").global_position.round(), 0)
-		a_point = line.points[0]
+		line.add_point(start_pos, 0)
+		last_point = start_pos
 	elif solving and (event.is_action_pressed("kill") or event.is_action_pressed("click")):
-		solving = false
-		line.clear_points()
-		visual.clear_points()
-		for seg in line_segments:
-			seg.free()
-		line_segments.clear()
-		
-func close_to(puzzle_point_id):
-	return global_position.distance_to(puzzle.get_node(str(puzzle_point_id)).global_position) < 3
-
-
-
-
-
-# Ancient stuff we probably don't need anymore
-# But you know...
-# Just in case
-		
-var current_seg = Line2D.new()		
-
-func move_along_current_path(delta):
-	if orientation != Vector2.ZERO:
-		var seg_vec = current_seg.points[1] - current_seg.points[0]
-		var trans = orientation.normalized().project(seg_vec)
-		move_and_slide(trans*speed)
-		
-		line.add_point(position.round())
-		
-func set_current_path(paths):
-	var closest_path = paths[0]
-	var longest_projection = Vector2()
-	for p in paths:
-		var vec_path = p.points[1] - p.points[0]
-		var projection = orientation.project(vec_path)
-		
-		# must in the same orientation of path
-		# and has the longest projection  amongst available paths
-		if projection.sign() == vec_path.sign() and projection.length() > longest_projection.length():
-			closest_path = p
-			longest_projection = projection
-			
-	current_seg = closest_path
-	
-func available_paths():
-	for point_id in puzzle.segments.keys():
-		if close_to(point_id):
-			return puzzle.segments[point_id]
-
+		reset_solving()

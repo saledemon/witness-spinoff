@@ -4,7 +4,7 @@
 [ext_resource path="res://witness.jpeg" type="Texture" id=5]
 [ext_resource path="res://PuzzleContainer.gd" type="Script" id=6]
 
-[node name="Area2D" type="Area2D"]
+[node name="GlobalWorld" type="Area2D"]
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2( 79.681, 77.5567 )
@@ -24,7 +24,7 @@ offset = Vector2( -1.97827, -139.902 )
 [node name="PuzzleContainer" type="Polygon2D" parent="."]
 position = Vector2( 75.3846, 87.3927 )
 color = Color( 1, 1, 1, 0 )
-polygon = PoolVector2Array( 15.17, 17.8333, 17.5476, 177.363, 13.6981, 179.854, 10.8676, 184.156, 10.5279, 191.742, 14.2642, 199.215, 22.6426, 203.29, 30.6814, 201.253, 36.2292, 195.591, 193.716, 195.799, 196.432, 17.1936, 195.362, 8.5514, 190.012, 6.57604, 184.827, 8.71601, 183.757, 17.1113 )
+polygon = PoolVector2Array( 15.17, 17.8333, 13.6981, 179.854, 10.8676, 184.156, 10.5279, 191.742, 14.2642, 199.215, 22.6426, 203.29, 30.6814, 201.253, 36.2292, 195.591, 193.716, 195.799, 196.432, 17.1936, 195.362, 8.5514, 190.012, 6.57604, 184.827, 8.71601, 183.757, 17.1113 )
 script = ExtResource( 6 )
 
 [node name="2" type="Position2D" parent="PuzzleContainer"]
@@ -55,10 +55,10 @@ position = Vector2( 190.042, 23.0976 )
 position = Vector2( 190.137, 7.37565 )
 
 [node name="1" type="Position2D" parent="PuzzleContainer"]
-position = Vector2( 23.6984, 189.844 )
+position = Vector2( 23.7568, 189.201 )
 
 [node name="edges" type="StaticBody2D" parent="PuzzleContainer"]
-position = Vector2( -75.3846, -87.3446 )
+position = Vector2( -75.2471, -87.3446 )
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="PuzzleContainer/edges"]
 position = Vector2( 83.724, 97.1094 )
@@ -66,7 +66,7 @@ polygon = PoolVector2Array( 10.1336, 8.96272, 13.3585, 7.80175, 175.507, 7.67275
 
 [node name="CollisionPolygon2D2" type="CollisionPolygon2D" parent="PuzzleContainer/edges"]
 position = Vector2( 78.3429, 294.412 )
-polygon = PoolVector2Array( 9.21623, -11.3905, 7.18652, -16.5557, 8.44157, -23.1099, 11.7884, -27.2934, 14.2985, -29.1062, 12.2067, -184.872, 14.9942, -189.389, 1.50903, -200.218, -2.98603, -182.033, 1.60853, -21.4364, 4.25807, -3.16846, 34.1004, 3.24625, 202.152, 0.424957, 187.645, -11.4256, 33.1242, -11.396, 29.0802, -5.53906, 23.7811, -4.28403, 17.3664, -4.42346, 13.1829, -6.93356 )
+polygon = PoolVector2Array( 12.2067, -184.872, 14.9942, -189.389, 1.50903, -200.218, -2.98603, -182.033, 4.25807, -3.16846, 202.152, 0.424957, 187.645, -11.4256, 14.861, -11.5215 )
 
 [node name="CollisionPolygon2D3" type="CollisionPolygon2D" parent="PuzzleContainer/edges"]
 position = Vector2( 134.212, 150.176 )
@@ -82,14 +82,15 @@ polygon = PoolVector2Array( -31.6682, -31.4009, 40.2048, -31.0847, 38.5186, 38.7
 
 [node name="CollisionPolygon2D6" type="CollisionPolygon2D" parent="PuzzleContainer/edges"]
 position = Vector2( 135.496, 232.222 )
-polygon = PoolVector2Array( -31.2466, -30.8739, 39.2563, -30.8739, 39.5725, 39.1021, -24.0615, 38.916, -26.2591, 35.4424, -30.7197, 32.5682 )
+polygon = PoolVector2Array( -31.2466, -30.8739, 39.2563, -30.8739, 39.5725, 39.1021, -31.0739, 39.3333 )
 
-[node name="KinematicBody2D" type="KinematicBody2D" parent="."]
+[node name="CursorBody" type="KinematicBody2D" parent="."]
 position = Vector2( 99.104, 276.569 )
 script = ExtResource( 3 )
-cursor_offset = 6.5
+speed = 300.0
+line_point_spacing = 5.0
 
-[node name="Cursor" type="CollisionPolygon2D" parent="KinematicBody2D"]
+[node name="Cursor" type="CollisionPolygon2D" parent="CursorBody"]
 scale = Vector2( 0.5, 0.5 )
 z_index = 1
-polygon = PoolVector2Array( -0.433914, -10.9678, 7.45338, -8.07947, 11.2304, -0.858704, 7.724, 7.29742, -0.322815, 10.5834, -8.56821, 6.99286, -11.2095, -0.636536, -8.21011, -7.63513 )
+polygon = PoolVector2Array( -0.433914, -10.9678, 3.58217, -9.91956, 7.45338, -8.07947, 9.91045, -4.79907, 10.9133, -0.969055, 10.1826, 3.12823, 7.724, 7.29742, 3.95639, 9.42249, -0.322815, 10.5834, -5.07671, 9.06525, -8.56821, 6.99286, -10.5204, 3.19629, -11.2095, -0.636536, -10.2312, -4.4248, -8.21011, -7.63513, -4.82153, -9.95361 )
