@@ -19,12 +19,12 @@ func _ready():
 		var vec_pool = []
 		for seg in segments[point_id]:
 			var seg2d = Line2D.new()
-			seg2d.add_point(root_pos)
-			seg2d.add_point(get_node(str(seg)).position)
+			seg2d.add_point(root_pos.round())
+			seg2d.add_point((get_node(str(seg)).position).round())
 			seg2d.name = str(point_id) + "->" + str(seg)
 			vec_pool.append(seg2d)
 		segments[point_id] = vec_pool
-	print_segments()
+	#print_segments()
 
 func print_segments():
 	for key in segments.keys():
