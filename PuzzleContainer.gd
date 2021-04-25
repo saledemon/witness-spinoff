@@ -2,6 +2,7 @@ extends Polygon2D
 
 var segments = [
 	"1/2",
+	"1/5",
 	"1/4",
 	"2/5",
 	"2/3",
@@ -16,155 +17,144 @@ var segments = [
 	"9/10"
 ]
 
-var points = []
+var points = {}
 
-var paths = {}
+# =============> Init <================
 
-# check for doubled segments
 func _ready():
 	# initialize empty arrays for every point
 	for point in get_children():
 		if point.get_class() == "Position2D":
-			paths[point.position.round()] = []
-			point.position = point.position.round()
-			points.append(point)
+			points[point.name] = PuzzlePoint.new(point.position.round(), point.name)
 	
 	for seg in segments:
-		var points = seg.split('/')
-		var pos0 = get_node(points[0]).position.round()
-		var pos1 = get_node(points[1]).position.round()
-		var dir := PoolVector2Array([pos0, pos1])
-		var _dir = invert_path(dir)
+		var point_ids = seg.split('/')
 		
-		paths[pos0].append(dir)
-		paths[pos1].append(_dir)
+		var p0: PuzzlePoint = points[point_ids[0]]
+		var p1: PuzzlePoint = points[point_ids[1]]
+		
+		p0.connect_point(p1)
+		p1.connect_point(p0)
 
 func reset_puzzle():
 	current_path = null
 	t = 0
 	path_trace.clear()
-	locked_points.clear()
-			
-func find_point_by_id(point_id):
-	for p in points:
-		if p.name == point_id:
-			return p
-			
-func find_point_by_position(pos):
-	for p in points:
-		if p.position == pos:
-			return p
-
-func get_path_for_point(point_id):
-	return paths[point_id]
-
-var current_path
-var t = 0
-
-func get_orthogonal_to_direction():
-	return Vector2(current_path)
 	
-func invert_path(path):
-	return PoolVector2Array([path[1], path[0]])
-	
-var move_dir = NO_MOVE
-const MOVE_FORWARD = "forward"
-const MOVE_BACKWARD = "backward"
-const NO_MOVE = "no_move"
+	for p in points:
+		points[p].unlock()
+			
+# =============> Movement <================
+
+var move_dir = FORWARD
+const FORWARD = "forward"
+const BACKWARD = "backward"
 
 var path_trace = []
-var locked_points = []
-
-func get_move_dir():
-	return move_dir
-
-func print_path(path):
-	print("("+find_point_by_position(path[0]).name+","+find_point_by_position(path[1]).name+")")
-
-func print_trace():
-	var trace_str = "trace : "
-	for path in path_trace:
-		trace_str += "("+find_point_by_position(path[0]).name+","+find_point_by_position(path[1]).name+")"
-		trace_str += " "
-	print(trace_str)
-
-func check_collision(with_path):
-	var with_inverted_path = invert_path(with_path)
-	for p in path_trace:
-		if p == with_path or p == with_inverted_path:
-			return true
-	return false
+var current_path
+var length
+var t = 0
+export(float) var cursor_speed_per_frame = 5
+export(float) var collision_dist = 10
 
 func get_move_along_puzzle_path(pos: Vector2, orientation, delta):
-	t += delta
 	
-	if not current_path:
-		var start_point = find_point_by_id("1").position.round()
-		current_path = determine_path(orientation, paths[start_point])
-	
-	
-	
-	# means it's on an intersection
-	if t <= 0 or t >= 1:
-		var intended_path = determine_path(orientation, paths[current_path[round(t)]])
-		var invert_intended_path = invert_path(intended_path)
-		if path_trace.size() > 0 and invert_intended_path == path_trace[0]:
-			move_dir = MOVE_BACKWARD
-			path_trace.remove(0)
-			#locked_points.remove(0)
-			current_path = invert_intended_path
-			t = 1 - delta * 3  # added *3 for bigger space, otherwise micro movements fait chier
-		else:
-			if t >= 1:
-				path_trace.insert(0, current_path)
-				locked_points.insert(0, current_path[0])
-			current_path = intended_path
-			t = delta
-			move_dir = MOVE_FORWARD
-		print_trace()
-	else:
-		var intended_path = determine_path(orientation, [current_path, invert_path(current_path)])
+	if not current_path: # set to beginning of puzzle when starting
+		var start_point = points["1"]
+		set_current_path(determine_path(orientation, start_point.paths))
 		
-		move_dir = MOVE_FORWARD
-		# go back
-		if intended_path != current_path:
-			t -= delta*2
-			move_dir = MOVE_BACKWARD
-
-	# interpolate
-	var new_pos = current_path[0].linear_interpolate(current_path[1], clamp(t, 0, 1))
+	var lock_forward = false
+	var incr = cursor_speed_per_frame * delta / length
+		
+	if current_path[1].locked: # check if should lock forward direction because of collision
+		var dist = to_local(pos).distance_to(current_path[1].position)
+		lock_forward =  dist < collision_dist
 	
+	if t < 0 or t > 1: # means it's on an intersection
+		
+		var path_end = current_path[1].paths.size() == 1 and t > 1
+		var from_paths = current_path[round(t)].paths if not path_end else [current_path, invert_path(current_path)]
+		var intended_path = determine_path(orientation, from_paths)
 	
-	# if approaching locked point
-	var index = locked_points.find(current_path[1])
-	if index >= 0:
-		var dist = to_local(pos).distance_to(locked_points[index])
-		if dist < 5:
-			move_dir = NO_MOVE
-			print("no_move")
-			return pos
+		if path_trace.size() > 0 and invert_path(intended_path) == path_trace[0]: # has gone back
+			print_path(invert_path(intended_path))
+			move_back_on_path(invert_path(intended_path))
+			t = 1 - incr
+		elif path_end:
+			if path_trace[0] != current_path:
+				path_trace.insert(0, current_path)
+			t = 1.05
+		else:
+			move_to_new_path(intended_path)
+			t = incr
+		# print_trace()
+	else: # still on the same path
+		var intended_path = determine_path(orientation, [current_path, invert_path(current_path)])
+		if intended_path != current_path: # means it's going back
+			t -= incr
+			move_dir = BACKWARD
+		elif not lock_forward:
+			move_dir = FORWARD
+			t += incr
 	
-	return to_global(new_pos)
+	return to_global(current_path[0].position.linear_interpolate(current_path[1].position, clamp(t, 0, 1)))
+	
+func move_to_new_path(new_path):
+	move_dir = FORWARD
+	if t >= 1:
+		if path_trace.size() > 0:
+			path_trace[0][0].lock() # lock the third to last (so we can go back)
+		path_trace.insert(0, current_path)
+	set_current_path(new_path)
+	
+func move_back_on_path(old_path):
+	move_dir = BACKWARD
+	path_trace.remove(0)
+	if path_trace.size() > 0:
+		path_trace[0][0].unlock()
+	set_current_path(old_path)
+	
+func set_current_path(path):
+	current_path = path
+	length = (current_path[1].position - current_path[0].position).length()
 
-func get_collision_with_trace_point(point):
-	var locked_points = []
-	for path in path_trace:
-		for p in path:
-			if p == point:
-				print(p)
-				return true
-	return false
-
-func determine_path(dir, from_paths):
+func determine_path(dir, from_paths, min_angle=PI*2):
 	var dir_path
-	var smallest_angle = PI
+	var smallest_angle = min_angle
 	for path in from_paths:
-		var angle = abs(dir.angle_to(path[1] - path[0]))
+		var angle = abs(dir.angle_to(path[1].position - path[0].position))
 		if angle < smallest_angle:
 			smallest_angle = angle
 			dir_path = path
 	return dir_path
+	
+func invert_path(path):
+	return [path[1], path[0]]
+	
+	
+# ==============> DEBUG <==================
+
+func find_point_by_position(pos):
+	for p in points.keys():
+		if points[p].position == pos:
+			return points[p]
 			
-		
+func print_path(path):
+	print("("+path[0].name+","+path[1].name+")")
+
+func print_trace():
+	var trace_str = "trace : "
+	for path in path_trace:
+		trace_str += "("+path[0].name+","+path[1].name+")"
+		trace_str += " "
+	print(trace_str)
+	
+func print_locked_points():
+	var lockstr = "locked : "
+	for p in points:
+		if points[p].locked:
+			lockstr += p + " "
+	print(lockstr)
 
 
+			

@@ -26,6 +26,7 @@ position = Vector2( 75.3846, 87.3927 )
 color = Color( 1, 1, 1, 0 )
 polygon = PoolVector2Array( 15.17, 17.8333, 13.6981, 179.854, 10.8676, 184.156, 10.5279, 191.742, 14.2642, 199.215, 22.6426, 203.29, 30.6814, 201.253, 36.2292, 195.591, 193.716, 195.799, 196.432, 17.1936, 195.362, 8.5514, 190.012, 6.57604, 184.827, 8.71601, 183.757, 17.1113 )
 script = ExtResource( 6 )
+cursor_speed_per_frame = 150.0
 
 [node name="2" type="Position2D" parent="PuzzleContainer"]
 position = Vector2( 105.712, 189.1 )
@@ -52,17 +53,11 @@ position = Vector2( 105.473, 24.1807 )
 position = Vector2( 190.042, 23.0976 )
 
 [node name="10" type="Position2D" parent="PuzzleContainer"]
-position = Vector2( 190.137, 7.37565 )
+position = Vector2( 190.073, 12.1751 )
 
 [node name="1" type="Position2D" parent="PuzzleContainer"]
 position = Vector2( 23.3066, 191.152 )
 
-[node name="CursorBody" type="KinematicBody2D" parent="."]
+[node name="CursorBody" type="Polygon2D" parent="."]
 position = Vector2( 99.7393, 274.096 )
 script = ExtResource( 3 )
-line_point_spacing = 2.0
-
-[node name="Cursor" type="CollisionPolygon2D" parent="CursorBody"]
-scale = Vector2( 0.5, 0.5 )
-z_index = 1
-polygon = PoolVector2Array( -0.433914, -10.9678, 3.58217, -9.91956, 7.45338, -8.07947, 9.91045, -4.79907, 10.9133, -0.969055, 10.1826, 3.12823, 7.724, 7.29742, 3.95639, 9.42249, -0.322815, 10.5834, -5.07671, 9.06525, -8.56821, 6.99286, -10.5204, 3.19629, -11.2095, -0.636536, -10.2312, -4.4248, -8.21011, -7.63513, -4.82153, -9.95361 )
