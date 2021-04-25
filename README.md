@@ -8,7 +8,7 @@ I did this with Godot in GDScript, I'm a beginner in game-making, juste found ou
 
 'Till now, I got the basic movement working : starting at puzzle beginnning, going forward, not crossing the line, going backward, staying in the puzzle... relatively basic stuff, but much more perplexing than I would have thought.
 
-### TODO in the feature
+### TODO in the future
 
 - Smooth out movement
 - The actual puzzle solving
