@@ -16,11 +16,13 @@ I did this with Godot in GDScript, I'm a beginner in game-making, juste found ou
 - <strike>Snap position to a path or something so it goes straigth, not wobbling around (path may be determine with a script attached to the puzzle)</strike>
 - Make that the line fills all the space available laterally
 - At the beginning, fill the bubble thingy
+- Putting a sort of zone around the points in order to smooth movement (you don't need to be exactly on the point to start turning). Might solve a couple of bugs too, if done properly that is....
 
 
 ### Bugs to fix
-- Bug after going into the puzzle end (or any end at that)
-- Erasing the line does not go at the same speed as the movement sometimes
+- Bug after going into the puzzle end (or any end at that) -> it is cause by the proximity of the two points
+- Sometimes, the cursor gets separated from the line (it goes forward instead of going backwards...) -> either it's proximity or it's because the point_trace head gets removed and then it's not added again or something.
+
 
 If you want to contribute, message me at [yannick.plante16@hotmail.com](yannick.plante16@hotmail.com)
 

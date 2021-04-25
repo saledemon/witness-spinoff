@@ -7,11 +7,11 @@
 [node name="GlobalWorld" type="Area2D"]
 
 [node name="Camera2D" type="Camera2D" parent="."]
-position = Vector2( 75.5353, 81.5647 )
+position = Vector2( -78.9127, 39.1891 )
 rotation = -0.0680678
 anchor_mode = 0
 current = true
-zoom = Vector2( 0.2, 0.2 )
+zoom = Vector2( 0.5, 0.5 )
 offset_h = -0.06
 
 [node name="witness" type="Sprite" parent="."]
@@ -53,11 +53,12 @@ position = Vector2( 105.473, 24.1807 )
 position = Vector2( 190.042, 23.0976 )
 
 [node name="10" type="Position2D" parent="PuzzleContainer"]
-position = Vector2( 190.073, 12.1751 )
+position = Vector2( 288.279, 21.6789 )
 
 [node name="1" type="Position2D" parent="PuzzleContainer"]
 position = Vector2( 23.3066, 191.152 )
 
-[node name="CursorBody" type="Polygon2D" parent="."]
+[node name="CursorBody" type="Position2D" parent="."]
 position = Vector2( 99.7393, 274.096 )
+z_index = 1
 script = ExtResource( 3 )
